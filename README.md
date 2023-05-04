@@ -16,11 +16,46 @@ PaperGenerator es una herramienta de apoyo para la redacción de documentos acad
 
 ## Instalación
 
-_(Aquí agregarás las instrucciones de instalación, incluyendo los requisitos previos, como la instalación de Python y otros paquetes necesarios.)_
+1.  Asegúrate de tener instalado Python 3.6 o superior en tu sistema. Puedes descargarlo desde la [página oficial de Python](https://www.python.org/downloads/).
+2.  Clona el repositorio de PaperGenerator en tu máquina local:
+    git clone https://github.com/alejomaf/PaperGenerator.git
+3.  Navega hasta la carpeta del proyecto:
+
+        cd paper-generator
+
+4.  Crea un entorno virtual para instalar las dependencias:
+
+        python3 -m venv venv
+
+5.  Activa el entorno virtual:
+
+- En Windows:
+
+  ```
+  venv\Scripts\activate
+  ```
+
+- En macOS y Linux:
+
+  ```
+  source venv/bin/activate
+  ```
+
+6.  Instala las dependencias del proyecto:
+
+        pip install -r requirements.txt
 
 ## Uso
 
-_(Aquí agregarás instrucciones detalladas sobre cómo utilizar el proyecto, incluyendo ejemplos de comandos y posibles configuraciones.)_
+1.  Asegúrate de que el entorno virtual esté activado antes de ejecutar PaperGenerator.
+2.  Edita el archivo `config.py` con tus credenciales de la API de OpenAI y las preferencias para el proyecto.
+3.  Ejecuta el script principal:
+
+        python paper_generator.py
+
+4.  Sigue las instrucciones en pantalla para proporcionar información sobre el documento que deseas generar, como el título, los capítulos y los subapartados.
+5.  PaperGenerator generará los archivos LaTeX (.tex) correspondientes a cada capítulo y subapartado, así como el archivo main.tex que incluye todas las secciones.
+6.  Utiliza una herramienta de compilación LaTeX, como [TeXstudio](https://www.texstudio.org/) o [Overleaf](https://www.overleaf.com/), para compilar los archivos .tex y obtener un documento PDF con el contenido generado.
 
 ## Precauciones y responsabilidad
 
@@ -30,12 +65,24 @@ Por favor, utiliza PaperGenerator de manera ética y responsable, cumpliendo con
 
 ## Contribución
 
-_(Aquí agregarás información sobre cómo otros desarrolladores pueden contribuir al proyecto, incluyendo instrucciones para realizar fork, crear ramas, realizar solicitudes de extracción y reportar problemas.)_
+Si deseas contribuir al proyecto, por favor sigue estos pasos:
+
+1. Haz fork del repositorio en tu cuenta de GitHub.
+2. Crea una nueva rama con un nombre descriptivo relacionado con las características o mejoras que deseas implementar.
+3. Realiza los cambios en tu rama y asegúrate de que el código funciona correctamente.
+4. Envía una solicitud de extracción desde tu rama a la rama principal del repositorio original.
+5. Espera a que los mantenedores del proyecto revisen y aprueben tu solicitud.
+
+También puedes contribuir reportando problemas o solicitando nuevas funcionalidades a través de la sección de _Issues_ del repositorio en GitHub.
 
 ## Licencia
 
-_(Aquí agregarás información sobre la licencia bajo la cual se distribuye el proyecto, como MIT, Apache 2.0, GPL, etc.)_
+Este proyecto está licenciado bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para obtener más detalles.
 
 ## Contacto
 
-_(Aquí agregarás información de contacto, como un correo electrónico o un perfil de redes sociales, para que los usuarios puedan comunicarse contigo en caso de preguntas o comentarios.)_
+Si tienes preguntas o comentarios, no dudes en ponerte en contacto conmigo:
+
+- Alejo
+- Correo electrónico: [alejomaf@outlook.com](mailto:alejomaf@outlook.com)
+- Página de GitHub: [http://alejomaf.github.io/](http://alejomaf.github.io/)

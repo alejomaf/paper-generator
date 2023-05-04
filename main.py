@@ -1,5 +1,7 @@
 import os
 import openai
+import json
+from unidecode import unidecode
 from dotenv import load_dotenv
 
 # Cargar las variables de entorno desde el archivo .env
@@ -18,24 +20,38 @@ project_context = (
     "Puede inventar información basada en situaciones que no han pasado pero que es normal que ocurran en este tipo de trabajos. "
     "Todas las respuestas deben estar enfocadas en la redacción del documento y estar escritas en lenguaje de programación LaTeX."
     "Centrate en elaborar el contenido de forma extensa, ahondando en la temática y desarrollando y explicando los conceptos."
-    "Solo aborda el capítulo que se te pide, redactalo en formato latex"
+    "Solo aborda el capítulo que se te pide y los subapartados que tiene, redactalos de forma larga y extensa, redactalo en formato latex"
+    "No concluyas cada texto que generes, no digas lo de 'En resumen...'"
 )
 
+indice = {}
 
-def generate_text(chapter, prompt, model="gpt-3.5-turbo", max_tokens=1000):
+
+def generate_text(chapter, prompt, add_context=True, model="gpt-3.5-turbo", max_tokens=1000):
     global project_context
     messages = [{"role": "system", "content": project_context},
-                {"role": "user", "content": "Redacta el capítulo "+chapter+" en latex que trata de '''"+prompt+"'''"}]
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        max_tokens=max_tokens,
-        n=1,
-        stop=None,
-        temperature=0,  # this is the degree of randomness of the model's output
-    )
+                {"role": "user", "content": prompt}]
+
+    content_generated = False
+
+    while not content_generated:
+        try:
+            response = openai.ChatCompletion.create(
+                model=model,
+                messages=messages,
+                max_tokens=max_tokens,
+                n=1,
+                stop=None,
+                temperature=0.4,  # this is the degree of randomness of the model's output
+            )
+            content_generated = True
+        except:
+            print("Error en la generación del capítulo, volviendo a intentar...")
+
     chapter_generated = response.choices[0].message["content"]
-    project_context += "\n" + summarize_chapter(chapter, prompt)
+    if add_context:
+        project_context += "\n" + summarize_chapter(chapter, prompt)
+    # project_context += "\n" + chapter_generated
     print(project_context)
     return chapter_generated
 
@@ -44,22 +60,45 @@ def summarize_chapter(chapter, prompt, model="gpt-3.5-turbo", max_tokens=700):
     global project_context
     messages = [
         {"role": "system", "content": project_context},
-        {"role": "user", "content": "Haz un resumen de este capítulo de menos de 100 palabras: " + prompt}]
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        max_tokens=max_tokens,
-        n=1,
-        stop=None,
-        temperature=0,  # this is the degree of randomness of the model's output
-    )
+        {"role": "user", "content": "Haz un resumen de este capítulo de menos de 60 palabras: " + prompt}]
+
+    content_generated = False
+
+    while not content_generated:
+        try:
+            response = openai.ChatCompletion.create(
+                model=model,
+                messages=messages,
+                max_tokens=max_tokens,
+                n=1,
+                stop=None,
+                temperature=0,  # this is the degree of randomness of the model's output
+            )
+            content_generated = True
+        except:
+            print("Error en la generación del resumen, volviendo a intentar...")
+
     return "Resumen de "+chapter+" "+response.choices[0].message["content"]
 
 
 def initialize_gpt_context(title, model="gpt-3.5-turbo", max_tokens=700):
     global project_context
+    global indice
     messages = [
-        {"role": "user", "content": "Elabora un guión y un resumen de 200 palabras para desarrollar un proyecto que trate de: " + title}]
+        {"role": "user", "content": "Elabora un guión y un resumen de 100 palabras para desarrollar un proyecto que trate de: " + title}]
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=messages,
+        max_tokens=max_tokens,
+        n=1,
+        stop=None,
+        temperature=0.2,  # this is the degree of randomness of the model's output
+    )
+    project_context += "\n El proyecto trata de " + \
+        response.choices[0].message["content"]
+
+    messages = [
+        {"role": "user", "content": "Elabora un índice para desarrollar un un proyecto que trate de: '" + title + "' proyecta ese índice en formato json de la siguiente forma [\{nombre_del_capitulo_1: [subapartado_1, subapartado2...]\},\{nombre_del_capitulo_2: [subapartado_1, subapartado2...]\}...]"}]
     response = openai.ChatCompletion.create(
         model=model,
         messages=messages,
@@ -68,9 +107,10 @@ def initialize_gpt_context(title, model="gpt-3.5-turbo", max_tokens=700):
         stop=None,
         temperature=0,  # this is the degree of randomness of the model's output
     )
-    project_context += "\n El proyecto trata de " + \
-        response.choices[0].message["content"]
+    indice = json.loads(response.choices[0].message["content"])
+
     print(project_context)
+    print(indice)
 
 
 def get_general_info():
@@ -82,59 +122,6 @@ def get_general_info():
     initialize_gpt_context(title)
     generate_main_file(title, author, supervisor, department, institution)
     return title, author, supervisor, department, institution
-
-
-def generate_abstract():
-    abstract_prompt = input(
-        "Describe brevemente el propósito y enfoque de tu investigación: ")
-    abstract = generate_text(
-        "Propósito y enfoque de la investigación", abstract_prompt)
-    generate_latex_files({"abstract": abstract})
-    return abstract
-
-
-def generate_introduction():
-    introduction_prompt = input(
-        "Proporciona información básica sobre el tema de investigación y el problema que abordarás: ")
-    introduction = generate_text(
-        "Investigación y problema que se abordará", introduction_prompt)
-    generate_latex_files({"introduction": introduction})
-    return introduction
-
-
-def generate_literature_review():
-    literature_review_prompt = input(
-        "Menciona algunas investigaciones o teorías relevantes relacionadas con tu tema: ")
-    literature_review = generate_text(
-        "Investigaciones previas", literature_review_prompt)
-    generate_latex_files({"literature_review": literature_review})
-    return literature_review
-
-
-def generate_methodology():
-    methodology_prompt = input(
-        "Describe brevemente los métodos y técnicas que utilizarás en tu investigación: ")
-    methodology = generate_text("Metodología y técnicas", methodology_prompt)
-    generate_latex_files({"methodology": methodology})
-    return methodology
-
-
-def generate_results():
-    results_prompt = input(
-        "Describe los resultados esperados de tu investigación: ")
-    results = generate_text(
-        "Resultados esperados de la investigación", results_prompt)
-    generate_latex_files({"results": results})
-    return results
-
-
-def generate_conclusion():
-    conclusion_prompt = input(
-        "Resume brevemente los hallazgos de tu investigación y su relevancia: ")
-    conclusion = generate_text(
-        "Resultados de la investigación", conclusion_prompt)
-    generate_latex_files({"conclusion": conclusion})
-    return conclusion
 
 
 def generate_latex_files(chapters):
@@ -161,6 +148,12 @@ def write_latex_file(filename, content):
 
 
 def generate_main_file(title, author, supervisor, department, institution):
+    global indice
+    chapter_names = [list(d.keys())[0] for d in indice]
+
+    # Crear una lista de las rutas de los archivos de capítulo
+    chapter_filepaths = [
+        f"{unidecode(chapter_name).lower().replace(' ', '_')}.tex" for chapter_name in chapter_names]
 
     # Archivo main.tex que incluye los archivos .tex de las secciones
     main_tex = f"""\\documentclass[12pt,a4paper]{{article}}
@@ -179,35 +172,54 @@ def generate_main_file(title, author, supervisor, department, institution):
 \\begin{{document}}
 
 \\maketitle
+"""
 
-\\input{{abstract}}
-\\input{{introduction}}
-\\input{{literature_review}}
-\\input{{methodology}}
-\\input{{results}}
-\\input{{conclusion}}
+    # Agregar las rutas de los archivos de capítulo al main.tex
+    for chapter_filepath in chapter_filepaths:
+        main_tex += f"\\input{{{chapter_filepath}}}\n"
 
+    main_tex += """
 \\printbibliography
 
 \\end{{document}}
 """
+
     write_latex_file("proyecto/main.tex", main_tex)
-# \\addbibresource{{{bib_file}}}
+
+
+def clear_project_folder():
+    folder = "proyecto"
+    for file_name in os.listdir(folder):
+        file_path = os.path.join(folder, file_name)
+        if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)
+        elif os.path.isdir(file_path):
+            os.rmdir(file_path)
 
 
 def main():
+    global project_context
+    global indice
+    clear_project_folder()
     title, author, supervisor, department, institution = get_general_info()
-    abstract = generate_abstract()
-    introduction = generate_introduction()
-    literature_review = generate_literature_review()
-    methodology = generate_methodology()
-    results = generate_results()
-    conclusion = generate_conclusion()
 
-    # Aquí puedes agregar código para generar el archivo LaTeX a partir de las secciones generadas
-    # Agrega esta línea al final de la función 'main()' para generar los archivos LaTeX
-    generate_latex_files(title, author, supervisor, department, institution,
-                         abstract, introduction, literature_review, methodology, results, conclusion)
+    for chapter in indice:
+        for chapter_name, subchapters in chapter.items():
+            # Genera el texto para el capítulo
+            chapter_text = generate_text(
+                chapter_name, f"Escribe la introducción a un capítulo sobre {chapter_name}. Recuerda hacerlo en latex", add_context=False)
+            print(f"Capítulo: {chapter_name}\n{chapter_text}\n\n")
+
+            # Itera a través de los subapartados y genera el texto
+            for subchapter in subchapters:
+                subchapter_text = generate_text(
+                    subchapter, f"Escribe un subapartado para el capitulo de '{chapter_name}' que trate de '{subchapter}', recuerda hacerlo en latex", add_context=False)
+                print(f"Subapartado: {subchapter}\n{subchapter_text}\n\n")
+                chapter_text += "\n"+subchapter_text
+
+        project_context = summarize_chapter(chapter_name, chapter_text)
+        file_name = unidecode(chapter_name).lower().replace(" ", "_")
+        generate_latex_files({file_name: chapter_text})
 
 
 if __name__ == "__main__":
