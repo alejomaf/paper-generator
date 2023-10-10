@@ -197,76 +197,27 @@ def get_general_info_for_projects():
 
 
 def generate_latex_files(chapters):
-    os.makedirs("proyecto", exist_ok=True)
+    os.makedirs("generated", exist_ok=True)
 
     # Archivo .bib para la bibliografía
-    bib_file = "proyecto/references.bib"
+    bib_file = "generated/references.bib"
     write_latex_file(bib_file, "")
 
     # Archivos .tex individuales para cada capítulo
     for chapter_name, content in chapters.items():
-        filename = f"proyecto/{chapter_name}.tex"
+        filename = f"generated/{chapter_name}.tex"
         write_latex_file(filename, content)
 
 
-def write_latex_file(filename, content):
-    # Eliminar el archivo si ya existe
-    if os.path.exists(filename):
-        os.remove(filename)
-
-    # Crear un nuevo archivo con el nuevo contenido
+def write_new_file(filename, content):
+    if_file_exists_delete(filename)
     with open(filename, "w") as file:
         file.write(content)
 
 
-def generate_main_file(title, author, supervisor, department, institution):
-    global indice
-    chapter_names = [list(d.keys())[0] for d in indice]
-
-    # Crear una lista de las rutas de los archivos de capítulo
-    chapter_filepaths = [
-        f"{unidecode(chapter_name).lower().replace(' ', '_')}.tex" for chapter_name in chapter_names]
-
-    # Archivo main.tex que incluye los archivos .tex de las secciones
-    main_tex = f"""\\documentclass[12pt,a4paper]{{article}}
-\\usepackage[utf8]{{inputenc}}
-\\usepackage[T1]{{fontenc}}
-\\usepackage{{lmodern}}
-\\usepackage{{graphicx}}
-\\usepackage{{hyperref}}
-\\usepackage[backend=bibtex,style=numeric]{{biblatex}}
-
-
-\\title{{{title}}}
-\\author{{{author}}}
-\\date{{}}
-
-\\begin{{document}}
-
-\\maketitle
-"""
-
-    # Agregar las rutas de los archivos de capítulo al main.tex
-    for chapter_filepath in chapter_filepaths:
-        main_tex += f"\\input{{{chapter_filepath}}}\n"
-
-    main_tex += """
-\\printbibliography
-
-\\end{{document}}
-"""
-
-    write_latex_file("proyecto/main.tex", main_tex)
-
-
-def clear_project_folder():
-    folder = "proyecto"
-    for file_name in os.listdir(folder):
-        file_path = os.path.join(folder, file_name)
-        if os.path.isfile(file_path) or os.path.islink(file_path):
-            os.unlink(file_path)
-        elif os.path.isdir(file_path):
-            os.rmdir(file_path)
+def if_file_exists_delete(filename):
+    if os.path.exists(filename):
+        os.remove(filename)
 
 
 def select_project_type():
@@ -310,13 +261,13 @@ def save_style_of_writing():
 def load_style_of_writing():
     global style_of_writing
     print("Estilos de escritura disponibles: ")
-    list_of_writing_styles = os.listdir("relevant_data/styles_of_writing")
+    list_of_writing_styles = os.listdir("data/styles_of_writing")
     for file_name in list_of_writing_styles:
         print(file_name)
     style_of_writing_name = input("Introduce el nombre del estilo: ")
     while style_of_writing_name not in list_of_writing_styles:
         style_of_writing_name = input("Por favor, introduce un nombre válido: ")
-    style_of_writing = open(f"relevant_data/styles_of_writing/{style_of_writing}", "r").read()
+    style_of_writing = open(f"data/styles_of_writing/{style_of_writing}", "r").read()
 
 
 def load_project_guidelines():
@@ -327,7 +278,7 @@ def load_project_guidelines():
         generate_new_project_guideline_summary()
     else:
         print("Proyectos disponibles: ")
-        list_of_project_guidelines = os.listdir("relevant_data/projects_guidelines/summarized_projects_guidelines")
+        list_of_project_guidelines = os.listdir("data/generated_guidelines/works")
         for file_name in list_of_project_guidelines:
             print(file_name)
         project_guideline = input("Introduce el nombre de la guía del proyecto: ")
@@ -338,7 +289,7 @@ def load_project_guidelines():
 
 def generate_new_project_guideline_summary():
     print("Proyectos para realizar disponibles: ")
-    list_of_project_guidelines = os.listdir("relevant_data/projects_guidelines")
+    list_of_project_guidelines = os.listdir("data/generated_guidelines")
     for file_name in list_of_project_guidelines:
         print(file_name)
     project_guideline = input("Introduce el nombre de la guía del proyecto: ")
@@ -346,7 +297,7 @@ def generate_new_project_guideline_summary():
         style_of_writing_name = input("Por favor, introduce un nombre válido: ")
     # Read all the pages of the pdf
     document_text = ""
-    for page in PdfReader(f"relevant_data/projects_guidelines/{project_guideline}").pages:
+    for page in PdfReader(f"data/generated_guidelines/{project_guideline}").pages:
         document_text += page.extractText()
     project_guideline_json = gpt_project_guideline_analysis(document_text, project_guideline)
     save_project_guidelines_summary_in_json(project_guideline_json, project_guideline)
@@ -357,16 +308,16 @@ def save_project_guidelines_summary_in_json(project_guideline_json, filename):
     global indice
     project_guideline_summary = project_guideline_json["resumen"]
     indice = project_guideline_json["indice_propuesto"]
-    if os.path.exists(f"relevant_data/projects_guidelines/summarized_projects_guidelines/{filename}.json"):
-        os.remove(f"relevant_data/projects_guidelines/summarized_projects_guidelines/{filename}.json")
-    with open(f"relevant_data/projects_guidelines/summarized_projects_guidelines/{filename}.json", "w") as outfile:
+    if os.path.exists(f"data/generated_guidelines/works/{filename}.json"):
+        os.remove(f"data/generated_guidelines/works/{filename}.json")
+    with open(f"data/generated_guidelines/works/{filename}.json", "w") as outfile:
         json.dump(project_guideline_json, outfile)
 
 
 def load_project_guidelines_summary_from_json(filename):
     global project_guideline_summary
     global indice
-    with open(f"relevant_data/projects_guidelines/summarized_projects_guidelines/{filename}", "r") as outfile:
+    with open(f"data/generated_guidelines/works/{filename}", "r") as outfile:
         project_guideline_json = json.load(outfile)
     project_guideline_summary = project_guideline_json["resumen"]
     indice = project_guideline_json["indice_propuesto"]
