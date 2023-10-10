@@ -1,0 +1,50 @@
+{
+  "summary": "Realiza el tema número 46.La Celestina, del temario de oposiciones de profesorado para la asignatura de Lengua y Literatura Castellana. Debe tener un índice, una bibliografía, un desarollo del tema, una conclusión, una propuesta didáctica y una situación de aprendizaje. El tamaño de cada parte debe ser semejante al del texto de ejemplo. En cáda parrado debe existir información y no habalr por hablar, sin entrar en grandielocuencias. Si algo es importante, decir el porqué. Los epigrafes del desarrollo deben incluir: Contexto y autor, Argumento y tema, género litarario, estructura, tiempo y espacio, personas y motivaciones, intención y sentido, lengua y estilo.",
+  "proposed_index": [
+    {
+      "chapter_name": "Índice",
+      "subchapters": [],
+      "number_of_pages": 1,
+      "chapter_summary": "Índice del proyecto"
+    },
+    {
+      "chapter_name": "Bibliografía",
+      "subchapters": [],
+      "number_of_pages": 1,
+      "chapter_summary": "Bibliografía del proyecto"
+    },
+    {
+      "chapter_name": "Desarrollo del tema",
+      "subchapters": [
+        "Contexto y autor",
+        "Argumento y tema",
+        "Género literario",
+        "Estructura",
+        "Tiempo y espacio",
+        "Personas y motivaciones",
+        "Intención y sentido",
+        "Lengua y estilo"
+      ],
+      "number_of_pages": 6,
+      "chapter_summary": "Desarrollo del tema del proyecto"
+    },
+    {
+      "chapter_name": "Conclusión",
+      "subchapters": [],
+      "number_of_pages": 1,
+      "chapter_summary": "Conclusión del proyecto"
+    },
+    {
+      "chapter_name": "Propuesta didáctica",
+      "subchapters": [],
+      "number_of_pages": 1,
+      "chapter_summary": "Propuesta didáctica del proyecto"
+    },
+    {
+      "chapter_name": "Situación de aprendizaje",
+      "subchapters": [],
+      "number_of_pages": 1,
+      "chapter_summary": "Situación de aprendizaje del proyecto"
+    }
+  ]
+}
