@@ -24,13 +24,21 @@ project_summary = ""
 project_name = ""
 project_context = ""
 
-type_of_project = "" # "thesis", "syllabus", "works"
+type_of_project = ""  # "thesis", "syllabus", "works"
 style_of_writing = ""
 project_guideline_summary = ""
 
-thesis_context = "Estoy asistiendo en la elaboración de trabajos de fin de grado y fin de máster en español de España. Los documentos serán en formato markdown.  Debes desarrollar el contenido de forma extensa, ahondando en la temática y explicando detalladamente los conceptos. Aunque no se proporcionen detalles específicos, el modelo debe ser capaz de generar contenido basado en situaciones que son comunes en este tipo de trabajos académicos. Se permite inventar información que, aunque no haya sucedido, es plausible y común en el contexto académico. Centra la redacción en desarrollar de forma extensa el tema y sus subapartados, sin incluir una sección de conclusión o frases del tipo 'En resumen...'."
-syllabus_context = f"Estoy realizando la elaboración de un temario titulado {project_name} y me estás ayudando a redactarlo"
-work_context = f"Estoy realizando la elaboración de un trabajo titulado {project_name} y me estás ayudando a redactarlo"
+
+def thesis_context():
+    return f"Estoy asistiendo en la elaboración de trabajos de fin de grado y fin de máster en español de España, trata de {project_name}. {add_context_to_prompt()} Los documentos serán en formato markdown.  Debes desarrollar el contenido de forma extensa, ahondando en la temática y explicando detalladamente los conceptos. Aunque no se proporcionen detalles específicos, el modelo debe ser capaz de generar contenido basado en situaciones que son comunes en este tipo de trabajos académicos. Se permite inventar información que, aunque no haya sucedido, es plausible y común en el contexto académico. Centra la redacción en desarrollar de forma extensa el tema y sus subapartados, sin incluir una sección de conclusión o frases del tipo 'En resumen...'."
+
+
+def syllabus_context():
+    return f"Estoy realizando la elaboración de un temario titulado {project_name} y me estás ayudando a redactarlo. {add_context_to_prompt()}"
+
+
+def work_context():
+    return f"Estoy realizando la elaboración de un trabajo titulado {project_name} y me estás ayudando a redactarlo. {add_context_to_prompt()}"
 
 
 def generate_chapter_prompt(chapter_name, summary, subchapters, number_of_pages=1):
@@ -44,15 +52,15 @@ def generate_chapter_prompt(chapter_name, summary, subchapters, number_of_pages=
 
 
 def generate_chapter_paper_prompt(chapter_name, summary, number_of_pages, subchapters):
-    return f'{thesis_context} Escribe un capítulo sobre {chapter_name}. Que trate de {summary}. Y tenga una extensión de {number_of_pages * int(os.getenv("WORDS_FOR_PAGE"))} palabras. {add_subchapters_to_prompt(subchapters)} {add_style_of_writing_to_prompt()}'
+    return f'{thesis_context()} Escribe un capítulo sobre {chapter_name}. Que trate de {summary}. Y tenga una extensión de {number_of_pages * int(os.getenv("WORDS_FOR_PAGE"))} palabras. {add_subchapters_to_prompt(subchapters)} {add_style_of_writing_to_prompt()}'
 
 
 def generate_chapter_syllabus_prompt(chapter_name, summary, number_of_pages, subchapters):
-    return f'Escribe un capítulo sobre {chapter_name}. Que trate de {summary}. Y tenga una extensión de {number_of_pages * int(os.getenv("WORDS_FOR_PAGE"))} palabras. {add_subchapters_to_prompt(subchapters)} {add_style_of_writing_to_prompt()}'
+    return f'{syllabus_context()} Escribe un capítulo sobre {chapter_name}. Que trate de {summary}. Y tenga una extensión de {number_of_pages * int(os.getenv("WORDS_FOR_PAGE"))} palabras. {add_subchapters_to_prompt(subchapters)} {add_style_of_writing_to_prompt()}'
 
 
 def generate_work_prompt(chapter_name, summary, number_of_pages, subchapters):
-    return f'Escribe un capítulo sobre {chapter_name}. Que trate de {summary}. Y tenga una extensión de {number_of_pages * int(os.getenv("WORDS_FOR_PAGE"))} palabras. {add_subchapters_to_prompt(subchapters)} {add_style_of_writing_to_prompt()}'
+    return f'{work_context()} Escribe un capítulo sobre {chapter_name}. Que trate de {summary}. Y tenga una extensión de {number_of_pages * int(os.getenv("WORDS_FOR_PAGE"))} palabras. {add_subchapters_to_prompt(subchapters)} {add_style_of_writing_to_prompt()}'
 
 
 def add_style_of_writing_to_prompt():
@@ -68,6 +76,11 @@ def add_subchapters_to_prompt(subchapters):
         return f"El capítulo se divide en los siguientes subcapítulos: {subchapters}."
     else:
         return ""
+
+
+def add_context_to_prompt():
+    global project_context
+    return f"Actualmente llevas redactado esto: {project_context}" if project_context != "" else ""
 
 
 def text_analysis_prompt(text_to_analyze):
@@ -86,8 +99,12 @@ class Chapter:
         self.generated_summary = generated_summary
         self.subchapters = subchapters
 
+    def __str__(self):
+        return f"Chapter(name: {self.chapter_name}, pages: {self.number_of_pages}, summary: {self.chapter_summary}, generated_summary: {self.generated_summary}, subchapters: {self.subchapters})"
+
     @staticmethod
     def chapters_from_json_array(json_array):
+        print(f"JSON array: {json_array}")
         chapters = []
         for json_dict in json_array:
             chapters.append(Chapter(
@@ -99,6 +116,13 @@ class Chapter:
             ))
         return chapters
 
+    @staticmethod
+    def chapters_to_json_str(chapter_array):
+        json_array = []
+        for chapter in chapter_array:
+            json_array.append(chapter.__dict__)
+        return json.dumps(json_array, indent=1)
+
 
 async def generate_chapter(chapter, add_context=True, model=os.getenv("MODEL_GPT_CHAPTER_GENERATION"),
                            max_tokens=os.getenv("MAX_TOKENS_GPT_CHAPTER_GENERATION")):
@@ -106,12 +130,11 @@ async def generate_chapter(chapter, add_context=True, model=os.getenv("MODEL_GPT
     messages = [
         {"role": "system",
          "content": "Este espacio está dedicado a la generación de capítulos de texto con parámetros específicos."},
-        {"role": "user", "content": project_context},
         {"role": "user", "content": generate_chapter_prompt(chapter.chapter_name, chapter.chapter_summary,
-                                                                  chapter.subchapters, chapter.number_of_pages)}]
+                                                            chapter.subchapters, chapter.number_of_pages)}]
 
     content_generated = False
-    chapter_summary = ""
+    chapter_generated = ""
     while not content_generated:
         try:
             response = openai.ChatCompletion.create(
@@ -123,22 +146,24 @@ async def generate_chapter(chapter, add_context=True, model=os.getenv("MODEL_GPT
                 temperature=float(os.getenv("TEMPERATURE_GPT_CHAPTER_GENERATION")),
             )
             content_generated = True
-            chapter_generated = response.choices[0].message["content"]
-            chapter_summary = summarize_chapter(chapter, chapter_generated)
         except Exception as e:
             print(f"Error en la generación del capítulo, volviendo a intentar... {e}")
 
+    chapter_generated = response.choices[0].message["content"]
+    chapter_summary = await summarize_chapter(chapter, chapter_generated)
+    project_context += chapter_summary
     print(f'Capítulo: {chapter.chapter_name}\n{chapter_generated}\n\n Contexto actual: {project_context}\n\n')
     return chapter_generated, chapter_summary
 
 
-def summarize_chapter(chapter, content, model="gpt-3.5-turbo", max_tokens=700):
+async def summarize_chapter(chapter, content, model="gpt-3.5-turbo", max_tokens=700):
     global project_context
 
     messages = [
         {"role": "system",
          "content": "Este es un espacio destinado para la generación de resúmenes concisos de capítulos. Al proporcionar el texto de un capítulo, el asistente producirá un resumen de menos de 60 palabras que captura los puntos más importantes del material. Por favor, asegúrate de que el texto del capítulo sea claro para permitir un resumen preciso."},
-        {"role": "user", "content": "Haz un resumen de este capítulo de menos de 60 palabras: " + content}]
+        {"role": "user",
+         "content": f'Este es el contexto actual: {project_context}. Haz un resumen de este capítulo ubicado entre tres comillas dobles de menos de 60 palabras. """{content}"""'}]
 
     content_generated = False
 
@@ -150,14 +175,14 @@ def summarize_chapter(chapter, content, model="gpt-3.5-turbo", max_tokens=700):
                 max_tokens=max_tokens,
                 n=1,
                 stop=None,
-                temperature=0,  # this is the degree of randomness of the model's output
+                temperature=0,
             )
             content_generated = True
-            return f"El capítulo {chapter} trata sobre {response.choices[0].message['content']}"
+            chapter_summary = response.choices[0].message["content"]
+            print(f"Resumen del capítulo: {chapter_summary}")
+            return f"El capítulo {chapter} trata sobre {chapter_summary}"
         except Exception as e:
             print(f"Error en la generación del resumen, volviendo a intentar... {e}")
-
-    return ""
 
 
 def gpt_text_analysis(text, model=os.getenv("MODEL_GPT_TEXT_ANALYSIS"), max_tokens=700):
@@ -209,11 +234,13 @@ async def generate_project():
     for chapter in index:
         if os.path.exists(f"generated/{type_of_project}/{project_name}/{chapter}.md"):
             if delete_file_with_confirmation(f"generated/{type_of_project}/{project_name}/{chapter.chapter_name}.md"):
-                content, summary = generate_chapter(chapter)
+                content, summary = await generate_chapter(chapter)
+                add_summarized_chapter_to_index_and_save(chapter.chapter_name, summary)
                 write_new_chapter(chapter, content)
         else:
             content, summary = await generate_chapter(chapter)
-            write_new_chapter(chapter, content)
+            add_summarized_chapter_to_index_and_save(chapter.chapter_name, summary)
+            write_new_chapter(chapter.chapter_name, content)
 
 
 def add_summarized_chapter_to_index_and_save(chapter_name, summary):
@@ -350,10 +377,14 @@ def load_project_index():
 
 def generate_new_project_summary():
     global project_summary
+    global project_guideline_summary
+    global index
     project_summary = input("Introduce el resumen del proyecto: ")
     while project_summary == "":
         project_summary = input("Por favor, introduce un resumen válido: ")
     project_summary_json = json.loads(gpt_index_generation(project_summary))
+    project_guideline_summary = project_summary_json["summary"]
+    index = Chapter.chapters_from_json_array(project_summary_json["proposed_index"])
     save_project_summary_in_json(project_summary_json)
 
 
@@ -362,13 +393,10 @@ def save_project_summary_in_json(project_summary_json):
     global project_name
     global type_of_project
     global index
-
-    project_guideline_summary = project_summary_json["summary"]
-    index = Chapter.chapters_from_json_array(project_summary_json["proposed_index"])
     if os.path.exists(f"data/generated_index/{type_of_project}/{project_name}.json"):
         os.remove(f"data/generated_index/{type_of_project}/{project_name}.json")
     with open(f"data/generated_index/{type_of_project}/{project_name}.json", "w") as outfile:
-        json.dump(project_summary_json, outfile)
+        json.dump('{"summary":'+project_guideline_summary+', "proposed_index:"'+Chapter.chapters_to_json_str(index)+'}', outfile)
 
 
 def load_project_guidelines_summary_from_json(filename):
